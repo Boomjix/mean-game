@@ -2,7 +2,7 @@ import * as mongoose from 'mongoose';
 import { logger } from '../logger';
 import {readFileSync} from 'fs';
 import {resolve} from 'path';
-import {stringify} from 'fast-safe-stringify';
+import stringify from 'fast-safe-stringify';
 
 export const mockDB = process.env.DB_MOCK === 'true';
 
@@ -70,9 +70,69 @@ export const connectDB = async () => {
 
     try {
         await mongoose.connect(url,options);
+    } catch (err) {
+        logger.error(`${stringify(err)}`);
+        logger.error(`Fehler bei der Datenbankverbindung: ${err.message}\n`);
+        process.exit(0);
+    }
+    logger.info(`DB-Verbindung zu ${connection.db.databaseName} ist aufgebaut`);
+
+    connection.on('disconnecting', () => 
+        logger.warn('DB-Verbindung wird geschlossen...'),
+    );
+
+    connection.on('disconnected', () =>
+        logger.warn('DB-Verbindung ist geschlossen...'),
+    );
+    connection.on('error', () => logger.error('Fehlerhafte DB Verbindung'));
+};     
+
+// In Produktion auf False setzen
+export const autoIndex = true;
+
+const temp = 'temp';
+export const uploadDir = resolve(__dirname, '..','..','..',temp, 'upload');
+logger.debug(`Upload-Verzeichnis: ${uploadDir}`);
+export const downloadDir = resolve(
+
+    __dirname,
+    '..',
+    '..',
+    '..',
+    temp,
+    'download',
+
+
+);
+logger.debug(`Download-Verzeichnis: ${downloadDir}`);
+
+export const optimistic = (schema: mongoose.Schema) => {
+
+    schema.pre('findOneAndUpdate', function(){
+    const update = this.getUpdate();
+    if(update.__v !== null) {
+        delete update.__v;
+    }
+    const keys = ['$set', '$setOnInsert'];
+    for (const key of keys) {
+
+        if (update [key] !== null && update[key].__v !==null){
+            delete update[key].__v;
+            if (Object.keys(update[key]).length === 0) {
+                delete update [key];
+            }
+        }
     }
 
-     
+    update.$inc = update.$inc || {}; // eslint disable
+    update.$inc.__v=1;
+    
+    
+});
+
+};
+
+// Copyright @Bene
 
 
 
@@ -81,4 +141,6 @@ export const connectDB = async () => {
 
 
 
-}
+
+
+
