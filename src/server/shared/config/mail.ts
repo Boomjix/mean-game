@@ -4,7 +4,7 @@ import * as SMTPTransport from 'nodemailer/lib/smtp-transport';
 
 export const FROM = '"John Doe" <nnvv0011@hs-karlsruhe.de>';
 
-export const MAIL_COMFIG: SMTPTransport.Options = {
+export const MAIL_CONFIG: SMTPTransport.Options = {
     // host: 'localhost', // default
     host: '127.0.0.1',
 
